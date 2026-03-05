@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AWS DevOps Demo - Minimal incident response showcase
+
+Resources:
+  # Healthy Lambda Function
+  HealthyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: HealthyFunction
+      Runtime: python3.13
+      Handler: healthy_function.lambda_handler
+      CodeUri: lambda/
+      Timeout: 30
+      MemorySize: 128
+      Environment:
+        Variables:
+          ENVIRONMENT: demo
+
+  # Faulty Lambda Function
+  FaultyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: FaultyFunction
+      Runtime: python3.13
+      Handler: faulty_function.lambda_handler
+      CodeUri: lambda/
+      Timeout: 30
+      MemorySize: 128
+      Environment:
+        Variables:
+          ENVIRONMENT: demo
+
+  # CloudWatch Alarm for Faulty Function Errors
+  FaultyFunctionErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: FaultyFunction-ErrorRate
+      AlarmDescription: Triggers when error rate exceeds threshold
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 2
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref FaultyFunction
+
+  # CloudWatch Alarm for Faulty Function Duration
+  FaultyFunctionDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: FaultyFunction-HighDuration
+      AlarmDescription: Triggers when function duration is high
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 20000
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref FaultyFunction
+
+Outputs:
+  HealthyFunctionArn:
+    Description: ARN of the healthy Lambda function
+    Value: !GetAtt HealthyFunction.Arn
+    
+  FaultyFunctionArn:
+    Description: ARN of the faulty Lambda function
+    Value: !GetAtt FaultyFunction.Arn
