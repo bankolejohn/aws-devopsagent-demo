@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS DevOps Agent Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #FF9900;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 20px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-healthy {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-faulty {
+            background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+            color: white;
+        }
+
+        .btn-stress {
+            background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
+            color: white;
+            grid-column: 1 / -1;
+        }
+
+        .response-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            min-height: 150px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .response-box:empty::before {
+            content: 'Click a button to test the API...';
+            color: #999;
+            font-style: italic;
+        }
+
+        .success {
+            color: #38ef7d;
+            font-weight: 600;
+        }
+
+        .error {
+            color: #ee0979;
+            font-weight: 600;
+        }
+
+        .warning {
+            color: #ff6a00;
+            font-weight: 600;
+        }
+
+        .info {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="badge">AWS DevOps Demo 2025</span>
+        <h1>🤖 AI-Powered Incident Response</h1>
+        <p class="subtitle">Test the Lambda functions and watch CloudWatch AI investigate failures</p>
+
+        <div class="button-group">
+            <button class="btn-healthy" onclick="testHealthy()">
+                ✅ Test Healthy Function
+            </button>
+            <button class="btn-faulty" onclick="testFaulty()">
+                ⚠️ Test Faulty Function
+            </button>
+            <button class="btn-stress" onclick="stressTest()">
+                🔥 Stress Test (10 rapid calls)
+            </button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="successCount">0</div>
+                <div class="stat-label">Successes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="errorCount">0</div>
+                <div class="stat-label">Errors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">Total Calls</div>
+            </div>
+        </div>
+
+        <div class="response-box" id="responseBox"></div>
+
+        <div class="footer">
+            <p>View incidents in <a href="https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#alarmsV2:" target="_blank">CloudWatch Console</a></p>
+            <p style="margin-top: 10px;">GitHub: <a href="https://github.com/bankolejohn/aws-devopsagent-demo" target="_blank">bankolejohn/aws-devopsagent-demo</a></p>
+        </div>
+    </div>
+
+    <script>
+        // API endpoints from deployment
+        const API_BASE = 'https://ddf1r5yl7e.execute-api.us-east-1.amazonaws.com/prod';
+        const HEALTHY_ENDPOINT = `${API_BASE}/healthy`;
+        const FAULTY_ENDPOINT = `${API_BASE}/faulty`;
+
+        let successCount = 0;
+        let errorCount = 0;
+        let totalCount = 0;
+
+        function updateStats() {
+            document.getElementById('successCount').textContent = successCount;
+            document.getElementById('errorCount').textContent = errorCount;
+            document.getElementById('totalCount').textContent = totalCount;
+        }
+
+        function log(message, type = 'info') {
+            const box = document.getElementById('responseBox');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            box.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        async function testHealthy() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Testing...';
+            
+            try {
+                log('🔄 Calling Healthy Function...', 'info');
+                const response = await fetch(HEALTHY_ENDPOINT);
+                const data = await response.json();
+                
+                totalCount++;
+                if (response.ok) {
+                    successCount++;
+                    log(`✅ Success! Response: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    errorCount++;
+                    log(`❌ Error: ${response.status} - ${JSON.stringify(data)}`, 'error');
+                }
+                updateStats();
+            } catch (error) {
+                errorCount++;
+                totalCount++;
+                log(`❌ Network Error: ${error.message}`, 'error');
+                updateStats();
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '✅ Test Healthy Function';
+            }
+        }
+
+        async function testFaulty() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Testing...';
+            
+            try {
+                log('🔄 Calling Faulty Function (expect random failures)...', 'warning');
+                const response = await fetch(FAULTY_ENDPOINT);
+                const data = await response.json();
+                
+                totalCount++;
+                if (response.ok && data.status === 'success') {
+                    successCount++;
+                    log(`✅ Rare success! Response: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    errorCount++;
+                    log(`⚠️ Expected failure: ${JSON.stringify(data)}`, 'warning');
+                }
+                updateStats();
+            } catch (error) {
+                errorCount++;
+                totalCount++;
+                log(`❌ Function Error: ${error.message}`, 'error');
+                updateStats();
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '⚠️ Test Faulty Function';
+            }
+        }
+
+        async function stressTest() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Running stress test...';
+            
+            log('🔥 Starting stress test: 10 rapid calls to Faulty Function...', 'warning');
+            
+            const promises = [];
+            for (let i = 1; i <= 10; i++) {
+                promises.push(
+                    fetch(FAULTY_ENDPOINT)
+                        .then(r => r.json())
+                        .then(data => {
+                            totalCount++;
+                            if (data.status === 'success') {
+                                successCount++;
+                                log(`  ${i}/10 ✅ Success`, 'success');
+                            } else {
+                                errorCount++;
+                                log(`  ${i}/10 ⚠️ Failed: ${data.message}`, 'warning');
+                            }
+                        })
+                        .catch(err => {
+                            totalCount++;
+                            errorCount++;
+                            log(`  ${i}/10 ❌ Error: ${err.message}`, 'error');
+                        })
+                );
+            }
+            
+            await Promise.all(promises);
+            updateStats();
+            log('🎯 Stress test complete! Check CloudWatch for alarms.', 'info');
+            
+            btn.disabled = false;
+            btn.innerHTML = '🔥 Stress Test (10 rapid calls)';
+        }
+
+        // Check if API endpoint is configured
+        window.addEventListener('DOMContentLoaded', () => {
+            if (API_BASE === 'API_ENDPOINT_PLACEHOLDER') {
+                log('⚠️ API endpoint not configured. Please update index.html with your API Gateway URL.', 'warning');
+                log('ℹ️ Run: sam deploy and copy the ApiEndpoint output', 'info');
+            } else {
+                log('✅ Ready! Click a button to test the API.', 'success');
+            }
+        });
+    </script>
+</body>
+</html>

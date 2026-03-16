@@ -3,6 +3,16 @@ Transform: AWS::Serverless-2016-10-31
 Description: AWS DevOps Demo - Minimal incident response showcase
 
 Resources:
+  # API Gateway
+  DemoApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+
   # Healthy Lambda Function
   HealthyFunction:
     Type: AWS::Serverless::Function
@@ -16,6 +26,13 @@ Resources:
       Environment:
         Variables:
           ENVIRONMENT: demo
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DemoApi
+            Path: /healthy
+            Method: GET
 
   # Faulty Lambda Function
   FaultyFunction:
@@ -30,6 +47,13 @@ Resources:
       Environment:
         Variables:
           ENVIRONMENT: demo
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DemoApi
+            Path: /faulty
+            Method: GET
 
   # CloudWatch Alarm for Faulty Function Errors
   FaultyFunctionErrorAlarm:
@@ -42,8 +66,9 @@ Resources:
       Statistic: Sum
       Period: 60
       EvaluationPeriods: 1
-      Threshold: 2
+      Threshold: 1
       ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
           Value: !Ref FaultyFunction
@@ -59,13 +84,26 @@ Resources:
       Statistic: Average
       Period: 60
       EvaluationPeriods: 1
-      Threshold: 20000
+      Threshold: 10000
       ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
           Value: !Ref FaultyFunction
 
 Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${DemoApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+    
+  HealthyEndpoint:
+    Description: Healthy function endpoint
+    Value: !Sub "https://${DemoApi}.execute-api.${AWS::Region}.amazonaws.com/prod/healthy"
+    
+  FaultyEndpoint:
+    Description: Faulty function endpoint
+    Value: !Sub "https://${DemoApi}.execute-api.${AWS::Region}.amazonaws.com/prod/faulty"
+    
   HealthyFunctionArn:
     Description: ARN of the healthy Lambda function
     Value: !GetAtt HealthyFunction.Arn

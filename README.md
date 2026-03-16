@@ -1,6 +1,13 @@
 # AWS DevOps Demo - 2025 Services Showcase
 
+[![AWS](https://img.shields.io/badge/AWS-DevOps%20Agent-FF9900?style=flat&logo=amazon-aws)](https://aws.amazon.com/devops-agent/)
+[![CloudWatch](https://img.shields.io/badge/CloudWatch-AI%20Investigations-FF9900?style=flat&logo=amazon-aws)](https://aws.amazon.com/cloudwatch/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![SAM](https://img.shields.io/badge/AWS-SAM-orange?style=flat&logo=amazon-aws)](https://aws.amazon.com/serverless/sam/)
+
 A minimal project demonstrating the latest AWS DevOps capabilities announced in 2025, including AWS DevOps Agent and CloudWatch AI-powered investigations.
+
+> 🚀 **Featured AWS Services**: DevOps Agent (Preview) | CloudWatch AI Investigations | Lambda | CloudWatch Alarms
 
 ## 🎯 What This Demonstrates
 
@@ -12,11 +19,26 @@ A minimal project demonstrating the latest AWS DevOps capabilities announced in 
 
 ## 🏗️ Architecture
 
-- 2 Lambda functions (healthy + faulty with random failures)
-- CloudWatch Logs & Metrics
-- CloudWatch Alarms for error detection
-- IAM roles with least privilege
-- Infrastructure as Code (AWS SAM)
+- **Frontend:** Single-page web app (HTML/CSS/JavaScript)
+- **API Gateway:** REST API with CORS enabled
+- **Lambda Functions:** 2 serverless functions (healthy + faulty)
+- **CloudWatch:** Logs, Metrics, and Alarms
+- **IAM:** Least privilege roles
+- **Infrastructure as Code:** AWS SAM (Serverless Application Model)
+
+### API Endpoints
+
+After deployment, you get:
+- `GET /healthy` - Always succeeds (baseline)
+- `GET /faulty` - Random failures (testing)
+
+### Failure Scenarios
+
+The faulty function randomly generates:
+- **Timeout**: Sleeps for 25 seconds (near Lambda timeout)
+- **Error**: Raises database connection exception
+- **Memory**: Allocates large data structures
+- **Success**: Occasionally succeeds (20% chance)
 
 ## 📋 Prerequisites
 
@@ -34,25 +56,27 @@ cd aws-devops-demo
 ./deploy.sh
 ```
 
-### 2. Generate Test Incidents
+### 2. Open the Web Interface
 
 ```bash
+./open-frontend.sh
+```
+
+This opens a beautiful web interface where you can:
+- ✅ Test the healthy function (always succeeds)
+- ⚠️ Test the faulty function (random failures)
+- 🔥 Run stress tests (trigger CloudWatch alarms)
+- 📊 See real-time success/error statistics
+
+### 3. Alternative: CLI Testing
+
+```bash
+# Test via command line
 ./test-functions.sh
+
+# Or trigger rapid failures
+./trigger-incident.sh
 ```
-
-This will trigger various failure scenarios:
-- Timeouts (25+ seconds)
-- Application errors (exceptions)
-- Memory pressure
-- High duration
-
-### 3. Set Up AI-Powered DevOps Features
-
-```bash
-./quick-setup.sh
-```
-
-Then follow the detailed guide in [SETUP_DEVOPS_AGENT.md](SETUP_DEVOPS_AGENT.md)
 
 ## 📊 Monitoring
 
@@ -61,16 +85,25 @@ View logs and metrics in CloudWatch console:
 - CloudWatch → Alarms → View alarm status
 - CloudWatch → Metrics → AWS/Lambda namespace
 
-## 🤖 AWS DevOps Agent Setup
+## 🤖 AWS DevOps Agent - Real Results
 
-The AWS DevOps Agent (announced at re:Invent 2025) acts as an autonomous on-call engineer:
+After setting up AWS DevOps Agent and triggering incidents, here's what the AI autonomously discovered:
 
-1. **Create Agent Space** in AWS Console
-2. **Connect to CloudWatch** for observability data
-3. **Configure topology** to map your Lambda functions
-4. **Enable automatic incident response**
+### What the Agent Found (Without Any Human Guidance)
 
-See [SETUP_DEVOPS_AGENT.md](SETUP_DEVOPS_AGENT.md) for detailed instructions.
+- **Deployment tracking** - Traced every SAM CLI deployment, who ran it, from what IP, with what tool version, and the exact S3 artifact hash
+- **Code correlation** - Detected that both Lambda functions share the same deployment package and correctly identified they use different handlers from the same bundle
+- **Config change detection** - Caught the alarm threshold change from 2 → 1 and correctly linked it to increased alarm frequency
+- **Duration pattern analysis** - Tracked exact alarm transition timestamps, counted historical occurrences, and correlated to invocation counts
+
+### Time Comparison
+
+| Approach | Time to Root Cause |
+|---|---|
+| Manual investigation | 2-4 hours |
+| AWS DevOps Agent | ~3 minutes |
+
+> "The agent pieced together the entire incident story - deployments, code changes, config changes, alarm history - completely autonomously."
 
 ## 🧪 Testing Different Failure Scenarios
 

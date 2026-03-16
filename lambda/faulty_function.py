@@ -8,8 +8,12 @@ def lambda_handler(event, context):
     This simulates real-world incidents for DevOps monitoring.
     """
     
-    # Random failure scenarios
-    failure_type = random.choice(['timeout', 'error', 'memory', 'success'])
+    # Random failure scenarios - weighted toward errors for better demo
+    failure_type = random.choices(
+        ['timeout', 'error', 'memory', 'success'],
+        weights=[15, 60, 15, 10],  # 60% errors, 15% timeout, 15% memory, 10% success
+        k=1
+    )[0]
     
     if failure_type == 'timeout':
         # Simulate timeout scenario
